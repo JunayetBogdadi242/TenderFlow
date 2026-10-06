@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="TenderFlow — browser-only tender document package builder">
+  <title>TenderFlow — Tender Document Package Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- PDF processing is local in the browser. The library itself is loaded as a static browser dependency. -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div id="toastRoot" class="toast-root" aria-live="polite"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">TF</div>
+      <div>
+        <div class="brand-name">TenderFlow</div>
+        <div class="brand-subtitle" data-i18n="appSubtitle">Tender Document Package Builder</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="language-switch" role="group" aria-label="Language">
+        <button class="lang-btn active" data-lang="en">English</button>
+        <button class="lang-btn" data-lang="bn">বাংলা</button>
+      </div>
+      <button id="helpBtn" class="icon-btn" aria-label="Help" title="Help">?</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="workflow" aria-label="Workflow">
+      <div class="step active" data-step="1"><span>1</span><div data-i18n="requirements">Requirements</div></div>
+      <div class="workflow-line"></div>
+      <div class="step" data-step="2"><span>2</span><div data-i18n="documents">Documents</div></div>
+      <div class="workflow-line"></div>
+      <div class="step" data-step="3"><span>3</span><div data-i18n="matching">Matching</div></div>
+      <div class="workflow-line"></div>
+      <div class="step" data-step="4"><span>4</span><div data-i18n="verification">Verification</div></div>
+      <div class="workflow-line"></div>
+      <div class="step" data-step="5"><span>5</span><div data-i18n="package">Package</div></div>
+    </section>
+
+    <section id="landing" class="panel hero-panel">
+      <div class="hero-copy">
+        <span class="eyebrow">TENDERFLOW</span>
+        <h1 data-i18n="heroTitle">Build a submission-ready tender package.</h1>
+        <p data-i18n="heroText">Upload requirements, add PDFs, match every requirement, resolve verification issues, and generate one final PDF — entirely in your browser.</p>
+      </div>
+      <div class="upload-card" id="requirementsDrop">
+        <div class="upload-icon">↑</div>
+        <h2 data-i18n="uploadRequirements">Upload Tender Requirements</h2>
+        <p data-i18n="requirementsHint">Upload your requirements.json file to begin.</p>
+        <input id="requirementsInput" type="file" accept=".json,application/json" hidden>
+        <button id="chooseRequirements" class="primary-btn" data-i18n="chooseRequirements">Choose requirements.json</button>
+        <div class="privacy-note"><span class="shield">✓</span><span data-i18n="localOnly">Files are processed locally. Nothing is uploaded.</span></div>
+      </div>
+      <div class="format-note">
+        <strong data-i18n="expectedFormat">Expected JSON:</strong>
+        <code>tender_id, tender_title, procuring_entity, bidder, submission_deadline, requirements[]</code>
+      </div>
+    </section>
+
+    <section id="workspace" class="workspace hidden">
+      <div class="workspace-grid">
+        <div class="main-column">
+          <section id="tenderSummary" class="card"></section>
+
+          <section id="requirementsSection" class="card section-card">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow" data-i18n="step1">STEP 1</span>
+                <h2 data-i18n="requiredDocuments">Required Documents</h2>
+              </div>
+              <span id="reqCountBadge" class="count-badge"></span>
+            </div>
+            <div id="requirementsList" class="requirements-list"></div>
+          </section>
+
+          <section id="documentsSection" class="card section-card">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow" data-i18n="step2">STEP 2</span>
+                <h2 data-i18n="uploadedDocuments">Uploaded PDF Files</h2>
+              </div>
+              <span class="count-badge"><span id="fileCount">0</span> / 30</span>
+            </div>
+
+            <div id="pdfDrop" class="dropzone">
+              <div class="drop-icon">PDF</div>
+              <div>
+                <h3 data-i18n="dropPdf">Drop your PDF files here</h3>
+                <p data-i18n="orBrowse">or click to browse</p>
+              </div>
+              <input id="pdfInput" type="file" accept="application/pdf,.pdf" multiple hidden>
+              <button id="browsePdf" class="secondary-btn" data-i18n="browseFiles">Browse files</button>
+              <div class="drop-meta" data-i18n="pdfLimits">Maximum 30 files · Maximum 50 MB total</div>
+            </div>
+            <div id="filesList" class="files-list empty-state">
+              <div class="empty-icon">PDF</div>
+              <p data-i18n="noPdfs">No PDF files uploaded yet.</p>
+            </div>
+          </section>
+
+          <section id="matchingSection" class="card section-card">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow" data-i18n="step3">STEP 3</span>
+                <h2 data-i18n="matchDocuments">Match Documents</h2>
+              </div>
+              <button id="suggestAllBtn" class="ghost-btn" data-i18n="suggestMatches">Suggest matches</button>
+            </div>
+            <div id="matchingList" class="matching-list"></div>
+          </section>
+
+          <section id="verificationSection" class="card section-card">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow" data-i18n="step4">STEP 4</span>
+                <h2 data-i18n="verification">Verification</h2>
+              </div>
+            </div>
+            <div id="verificationList" class="verification-list"></div>
+          </section>
+        </div>
+
+        <aside class="side-column">
+          <section id="readinessPanel" class="card readiness-card sticky"></section>
+          <section class="card privacy-card">
+            <div class="privacy-heading"><span class="shield">✓</span><h3 data-i18n="privacyTitle">Private by design</h3></div>
+            <p data-i18n="privacyText">Tender PDFs stay on this device. No server upload, database, or external storage is used for your documents.</p>
+          </section>
+        </aside>
+      </div>
+
+      <section id="packageSection" class="card package-section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow" data-i18n="step5">STEP 5</span>
+            <h2 data-i18n="package">Package</h2>
+          </div>
+        </div>
+        <div id="packageAction"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="helpModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <button class="modal-close" id="closeHelp" aria-label="Close">×</button>
+      <div class="eyebrow">TENDERFLOW</div>
+      <h2 data-i18n="helpTitle">How it works</h2>
+      <ol class="help-list">
+        <li data-i18n="help1">Upload a valid requirements.json file.</li>
+        <li data-i18n="help2">Add the tender PDFs. Duplicate content is detected automatically.</li>
+        <li data-i18n="help3">Match each requirement to one PDF. Suggestions are never applied without your confirmation.</li>
+        <li data-i18n="help4">Enter expiry dates where required and resolve every blocking issue.</li>
+        <li data-i18n="help5">Generate the final PDF. The cover is always English and the original PDF content is preserved.</li>
+      </ol>
+    </div>
+  </div>
+</body>
+</html>
